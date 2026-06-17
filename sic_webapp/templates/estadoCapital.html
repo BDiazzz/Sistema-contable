@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load math_extras %}
+
+{% block title %}Estado de Capital - Garrobos Tech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/estadoCapital.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="estado-header">
+    <h2>Estado de Capital</h2>
+    <p class="text-muted">Garrobos Tech</p>
+</div>
+
+<div class="mb-4">
+    <div class="card">
+        <div class="card-body">
+            <form method="GET" action="{% url 'estado_capital' %}" class="row g-3">
+                <div class="col-md-8">
+                    <label for="periodo_id" class="form-label fw-bold">Seleccionar Periodo Contable Cerrado:</label>
+                    <select name="periodo_id" id="periodo_id" class="form-select" onchange="this.form.submit()">
+                        {% if sin_periodos_cerrados %}
+                            <option value="">No hay periodos cerrados disponibles</option>
+                        {% else %}
+                            {% for periodo in periodos_cerrados %}
+                                <option value="{{ periodo.id }}" 
+                                    {% if periodo_seleccionado and periodo.id == periodo_seleccionado.id %}selected{% endif %}>
+                                    {{ periodo.nombre }} ({{ periodo.fecha_inicio|date:"d/m/Y" }} - {{ periodo.fecha_fin|date:"d/m/Y" }})
+                                </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                </div>
+            </form>
+            {% if sin_periodos_cerrados %}
+                <div class="alert alert-warning mt-3 mb-0">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Nota:</strong> Los estados financieros solo están disponibles para periodos contables cerrados. 
+                    Actualmente no hay periodos cerrados en el sistema.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if periodo_seleccionado %}
+    <div class="alert alert-info">
+        <strong>Periodo:</strong> {{ periodo_seleccionado.nombre }} 
+        ({{ periodo_seleccionado.fecha_inicio|date:"d/m/Y" }} - {{ periodo_seleccionado.fecha_fin|date:"d/m/Y" }})
+    </div>
+{% endif %}
+
+<div class="estado-container">
+    <table class="estado-table">
+        <thead>
+            <tr>
+                <th class="concepto-col">Código</th>
+                <th class="concepto-col">Concepto</th>
+                <th class="monto-col">Monto ($)</th>
+            </tr>
+        </thead>
+         <tbody>
+             {% if subcuentas_capital %}
+                 {% for cuenta in subcuentas_capital %}
+                 <tr>
+                     <td class="concepto">{{ cuenta.codigo }}</td>
+                     <td class="concepto">{{ cuenta.nombre }}</td>
+                     <td class="monto">${{ cuenta.saldo|abs_value|floatformat:2 }}</td>
+                 </tr>
+                 {% endfor %}
+                 <tr>
+                     <td colspan="3" class="separator"></td>
+                 </tr>
+                  <tr class="subtotal-row">
+                      <td colspan="2" class="concepto"><strong>Capital Inicial</strong></td>
+                      <td class="monto"><strong>${{ total_patrimonio|abs_value|floatformat:2 }}</strong></td>
+                  </tr>
+                 
+                 <tr>
+                     <td colspan="3" class="separator"></td>
+                 </tr>
+                 
+                 <tr class="total-row">
+                     <td colspan="2" class="concepto"><strong>
+                         {% if resultado_neto >= 0 %}
+                             Más: Utilidad Neta del Ejercicio
+                         {% else %}
+                             Menos: Pérdida Neta del Ejercicio
+                         {% endif %}
+                     </strong></td>
+                     <td class="monto {% if resultado_neto < 0 %}text-danger{% endif %}"><strong>${{ resultado_neto_abs|floatformat:2 }}</strong></td>
+                 </tr>
+                 
+                 <tr>
+                     <td colspan="3" class="separator"></td>
+                 </tr>
+                 
+                 <tr class="total-row">
+                     <td colspan="2" class="concepto"><strong>TOTAL PATRIMONIO</strong></td>
+                     <td class="monto {% if total_patrimonio_con_utilidad < 0 %}text-danger{% endif %}"><strong>${{ total_patrimonio_con_utilidad_abs|floatformat:2 }}</strong></td>
+                 </tr>
+             {% else %}
+                 <tr>
+                     <td colspan="3" class="text-center text-muted">
+                         {% if sin_periodos_cerrados %}
+                             No hay periodos cerrados disponibles
+                         {% else %}
+                             No hay datos de capital disponibles para el periodo seleccionado
+                         {% endif %}
+                     </td>
+                 </tr>
+             {% endif %}
+         </tbody>
+     </table>
+     
+     {% if total_patrimonio_con_utilidad < 0 %}
+         <div class="alert alert-warning mt-3">
+             <i class="bi bi-exclamation-triangle-fill"></i>
+             <strong>Nota:</strong> Ha habido pérdida en el patrimonio. El total del patrimonio es negativo (-${{ total_patrimonio_con_utilidad_abs|floatformat:2 }}), lo que indica que los pasivos superan los activos.
+         </div>
+     {% endif %}
+ </div>
+ {% endblock %}

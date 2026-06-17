@@ -1,0 +1,116 @@
+.estado-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #333;
+}
+
+.estado-header h2 {
+  margin-bottom: 0.5rem;
+}
+
+.periodo {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+.estado-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.estado-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.estado-table thead {
+  background: #f8f9fa;
+  border-bottom: 2px solid #333;
+}
+
+.estado-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: bold;
+  color: #333;
+}
+
+.concepto-col {
+  text-align: left;
+}
+
+.concepto-col:first-child {
+  width: 15%;
+}
+
+.concepto-col:nth-child(2) {
+  width: 55%;
+}
+
+.monto-col {
+  width: 30%;
+  text-align: right;
+}
+
+.estado-table tbody tr {
+  border-bottom: 1px solid #e9ecef;
+}
+
+.estado-table td {
+  padding: 0.75rem 1rem;
+}
+
+.concepto {
+  color: #555;
+}
+
+.concepto.indent {
+  padding-left: 2rem;
+  font-style: italic;
+}
+
+.monto {
+  text-align: right;
+  font-family: monospace;
+  color: #333;
+}
+
+.seccion-row {
+  background: #f1f3f5;
+  border-top: 1px solid #dee2e6;
+}
+
+.seccion-row td {
+  padding: 0.75rem 1rem;
+  color: #212529;
+}
+
+.subtotal-row {
+  background: #f8f9fa;
+}
+
+.total-row {
+  background: #e9ecef;
+  border-top: 2px solid #333;
+  border-bottom: 2px solid #333;
+}
+
+.total-row td {
+  padding: 1rem;
+  font-size: 1.1rem;
+}
+
+.separator {
+  height: 0.5rem;
+  background: transparent;
+  border: none;
+}
+
+.text-muted {
+  color: #6c757d;
+  font-style: italic;
+}

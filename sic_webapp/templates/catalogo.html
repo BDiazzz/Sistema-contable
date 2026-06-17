@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load math_extras %}
+
+{% block title %}Catálogo de Cuentas - Garrobos Tech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/catalogo.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="catalogo-header">
+    <h2>Catálogo de Cuentas</h2>
+    <p class="text-muted">Sistema Contable - Garrobos Tech</p>
+</div>
+
+{% if activos %}
+<div class="catalogo-section">
+    <h3 class="section-header">Activos</h3>
+    <div class="catalogo-grid">
+        {% for grupo in activos %}
+            {% for subcuenta in grupo.subcuentas %}
+                <div class="cuenta-card">
+                    <div class="cuenta-codigo">{{ subcuenta.codigo|format_codigo }}</div>
+                    <div class="cuenta-nombre">{{ subcuenta.nombre }}</div>
+                    <div class="cuenta-tipo"><span class="tipo-badge">{{ grupo.cuenta_principal.nombre }}</span></div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if pasivos %}
+<div class="catalogo-section">
+    <h3 class="section-header">Pasivos</h3>
+    <div class="catalogo-grid">
+        {% for grupo in pasivos %}
+            {% for subcuenta in grupo.subcuentas %}
+                <div class="cuenta-card">
+                    <div class="cuenta-codigo">{{ subcuenta.codigo|format_codigo }}</div>
+                    <div class="cuenta-nombre">{{ subcuenta.nombre }}</div>
+                    <div class="cuenta-tipo"><span class="tipo-badge">{{ grupo.cuenta_principal.nombre }}</span></div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if patrimonio %}
+<div class="catalogo-section">
+    <h3 class="section-header">Patrimonio</h3>
+    <div class="catalogo-grid">
+        {% for grupo in patrimonio %}
+            {% for subcuenta in grupo.subcuentas %}
+                <div class="cuenta-card">
+                    <div class="cuenta-codigo">{{ subcuenta.codigo|format_codigo }}</div>
+                    <div class="cuenta-nombre">{{ subcuenta.nombre }}</div>
+                    <div class="cuenta-tipo"><span class="tipo-badge">{{ grupo.cuenta_principal.nombre }}</span></div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if ingresos %}
+<div class="catalogo-section">
+    <h3 class="section-header">Ingresos</h3>
+    <div class="catalogo-grid">
+        {% for grupo in ingresos %}
+            {% for subcuenta in grupo.subcuentas %}
+                <div class="cuenta-card">
+                    <div class="cuenta-codigo">{{ subcuenta.codigo|format_codigo }}</div>
+                    <div class="cuenta-nombre">{{ subcuenta.nombre }}</div>
+                    <div class="cuenta-tipo"><span class="tipo-badge">{{ grupo.cuenta_principal.nombre }}</span></div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if gastos %}
+<div class="catalogo-section">
+    <h3 class="section-header">Gastos</h3>
+    <div class="catalogo-grid">
+        {% for grupo in gastos %}
+            {% for subcuenta in grupo.subcuentas %}
+                <div class="cuenta-card">
+                    <div class="cuenta-codigo">{{ subcuenta.codigo|format_codigo }}</div>
+                    <div class="cuenta-nombre">{{ subcuenta.nombre }}</div>
+                    <div class="cuenta-tipo"><span class="tipo-badge">{{ grupo.cuenta_principal.nombre }}</span></div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

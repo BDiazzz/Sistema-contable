@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Balance de Comprobación Ajustado - Garrobos Tech{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mono-number {
+        font-family: 'Courier New', Courier, monospace;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+    <h1 class="mb-3">Balance de Comprobación Ajustado</h1>
+
+    <form method="GET" action="" class="row g-3 align-items-center bg-light p-3 rounded border mb-4">
+        <div class="col-md-6">
+            <label for="periodo_id" class="form-label fw-bold">Seleccionar Período Contable:</label>
+            <select name="periodo_id" id="periodo_id" class="form-select" onchange="this.form.submit();">
+                
+                {% if not todos_los_periodos %}
+                    <option value="">No hay períodos creados</option>
+                {% endif %}
+
+                {% for p in todos_los_periodos %}
+                    <option value="{{ p.id }}" 
+                            {% if p.id == periodo_seleccionado.id %}selected{% endif %}>
+                        {{ p.nombre }} ({{ p.fecha_inicio|date:"d/m/Y" }} - {{ p.fecha_fin|date:"d/m/Y" }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <button type="submit" class="btn btn-primary mt-4">Generar Reporte</button>
+        </div>
+    </form>
+
+
+    {% if periodo_seleccionado %}
+
+        <h4 class="text-muted mb-4">
+            Período: {{ periodo_seleccionado.nombre }} (Saldos al {{ periodo_seleccionado.fecha_fin|date:"d/m/Y" }})
+        </h4>
+
+        {% if balance_cuadrado %}
+            <div class="alert alert-success d-flex align-items-center" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <div>
+                    <strong>¡Balance Cuadrado!</strong> El total de Débitos coincide con el total de Haberes.
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>
+                    <strong>¡ATENCIÓN: BALANCE DESCUADRADO!</strong> Los totales no coinciden.
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="table-responsive mt-4">
+            <table class="table table-striped table-hover table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Nombre de la Cuenta</th>
+                        <th scope="col" class="text-end">Debe</th>
+                        <th scope="col" class="text-end">Haber</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for linea in lineas %}
+                    <tr>
+                        <td>{{ linea.codigo }}</td>
+                        <td>{{ linea.nombre }}</td>
+                        <td class="text-end mono-number">{{ linea.debe|floatformat:2 }}</td>
+                        <td class="text-end mono-number">{{ linea.haber|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            No hay cuentas con saldos para este período.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-group-divider">
+                    <tr class="table-light">
+                        <td colspan="2" class="text-end fw-bold">TOTALES</td>
+                        <td class="text-end fw-bold mono-number">{{ total_debe|floatformat:2 }}</td>
+                        <td class="text-end fw-bold mono-number">{{ total_haber|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    
+    {% else %}
+        <div class="alert alert-warning" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            Para generar un reporte, primero debe <strong>crear un Período Contable</strong> en el panel de administración.
+        </div>
+    {% endif %}
+
+{% endblock %}

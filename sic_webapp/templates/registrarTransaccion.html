@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    Registro de Asiento Contable
+{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">
+    Registrar
+    {% if tipo_registro == 'NORMAL' %}
+        Nueva Transacción (Asiento)
+    {% elif tipo_registro == 'AJUSTE' %}
+        Asiento de Ajuste
+    {% endif %}
+</h2>
+
+    <form method="post" id="transaction-form" 
+    data-prefix="{{ formset.prefix }}"
+    data-check-iva-url="{% url 'check_cuenta_iva_api' %}"
+    data-iva-credito-code="A3"
+    data-iva-debito-code="P4"
+    data-default-pago-code="A2"
+    data-default-cobro-code="A1"
+    data-tasa-iva="0.13" >
+
+        {% csrf_token %}
+
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                Datos Generales
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="{{ transaccion_form.fecha.id_for_label }}" class="form-label">{{ transaccion_form.fecha.label }}</label>
+                        {{ transaccion_form.fecha }}
+                    </div>
+                    <div class="col-md-9">
+                        <label for="{{ transaccion_form.descripcion.id_for_label }}" class="form-label">{{ transaccion_form.descripcion.label }}</label>
+                        {{ transaccion_form.descripcion }}
+                    </div>
+                </div>
+                {% for field in transaccion_form %}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                Movimientos Contables (Partida Doble)
+                <button type="button" class="btn btn-success btn-sm" id="add-row">
+                    <i class="bi bi-plus-circle"></i> Añadir Movimiento
+                </button>
+            </div>
+            <div class="card-body">
+
+                <div class="row mb-3 px-3">
+                    <div class="col-md-6 p-0">
+                        <label for="modo-transaccion" class="form-label fw-bold">Modo de Registro:</label>
+                        <select id="modo-transaccion" class="form-select">
+                            <option value="manual" selected>Partida de Diario (Manual)</option>
+                            <option value="compra">Compra / Gasto (Automatizar IVA)</option>
+                            <option value="venta">Venta / Ingreso (Automatizar IVA)</option>
+                        </select>
+                    </div>
+                </div>
+                {{ formset.management_form }}
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Subcuenta</th>
+                                <th style="width: 20%;">Tipo</th>
+                                <th style="width: 15%;">Monto</th>
+                                <th style="width: 15%;">Total Debe</th>
+                                <th style="width: 15%;">Total Haber</th>
+                                <th style="width: 5%;">Eliminar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="formset-container">
+                            {% for form in formset %}
+                                <tr class="movement-row" id="{{ form.prefix }}-row">
+                                    {% for field in form.visible_fields %}
+                                        {% if field.name == 'subcuenta' %}
+                                            <td>
+                                                <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="form-select subcuenta-select">
+                                                    <option value="">--- Seleccionar Subcuenta ---</option>
+                                                    {% for subcuenta in form.subcuenta.field.queryset %}
+                                                        <option value="{{ subcuenta.codigo }}" {% if subcuenta.codigo == form.subcuenta.value %}selected{% endif %}>
+                                                            {{ subcuenta.codigo }} - {{ subcuenta.nombre }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                                            </td>
+                                        {% elif field.name == 'tipo_movimiento' %}
+                                            <td>
+                                                <select name="{{ field.html_name }}" id="{{ field.id_for_label }}" class="form-select tipo-movimiento-select">
+                                                    {% for value, label in field.field.choices %}
+                                                        <option value="{{ value }}" {% if value == form.tipo_movimiento.value or value == 'Debe' and not form.tipo_movimiento.value %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                                            </td>
+                                        {% elif field.name == 'monto' %}
+                                            <td>
+                                                <input type="number" step="0.01" min="0.01" class="form-control monto-input" name="{{ field.html_name }}" id="{{ field.id_for_label }}" value="{{ field.value|default_if_none:'' }}">
+                                                {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                                            </td>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <td class="total-debe"></td>
+                                    <td class="total-haber"></td>
+
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm delete-row" {% if form.instance.pk %}data-existing="true"{% endif %}><i class="bi bi-trash"></i></button>
+                                        {{ form.DELETE }}
+                                        {{ form.id }}
+                                        {% for field in form.hidden_fields %}
+                                            {{ field }}
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row table-info">
+                                <td colspan="3" class="text-end">TOTALES:</td>
+                                <td id="grand-total-debe">0.00</td>
+                                <td id="grand-total-haber">0.00</td>
+                                <td></td>
+                            </tr>
+                            <tr class="total-row">
+                                <td colspan="3" class="text-end">DIFERENCIA (Debe - Haber):</td>
+                                <td colspan="2" id="total-difference" class="text-center">0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">Registrar Asiento Contable</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/registrarTransaccion.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    {% if messages %}
+    <script>
+        // Espera a que todo el DOM esté cargado
+            {% for message in messages %}
+                Swal.fire({
+                    // Asignamos un título dinámico según la etiqueta
+                    title: '{% if message.tags == "success" %}¡Éxito!{% elif message.tags == "error" %}¡Error!{% else %}¡Atención!{% endif %}',
+                    text: '{{ message }}',
+                    // Usamos la etiqueta del mensaje (success, error, warning, info)
+                    icon: '{{ message.tags }}', 
+                    confirmButtonText: 'Entendido'
+                });
+            {% endfor %}  
+    </script>
+    {% endif %}
+    <script type="application/json" id="subcuentas-data">
+        [
+            {% for subcuenta in all_subcuentas %}
+            {
+                "codigo": "{{ subcuenta.codigo }}",
+                "nombre": "{{ subcuenta.nombre }} ({{ subcuenta.cuenta_principal.codigo }})"
+            }
+            {% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+    </script>
+{% endblock %}

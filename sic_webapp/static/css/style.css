@@ -1,0 +1,24 @@
+nav {
+    background-color: #3d3d3c;
+}
+
+body{
+    background-color: #f2f2f2;
+}
+
+.icono{
+    font-size: 3rem;
+    text-align: center;
+}
+
+.card {
+    transition: transform 0.3s bos-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.total-row { font-weight: bold; }
+        .is-invalid { border-color: #dc3545!important; }

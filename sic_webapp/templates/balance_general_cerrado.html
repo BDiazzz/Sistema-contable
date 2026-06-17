@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% load static %}
+{% load math_extras %}
+
+{% block extra_css %}
+  <style>
+    /* Estilos específicos para Balance General (wireframe-like) */
+    .card.p-4 { border-radius: 12px; }
+    h1.h3 { font-size: 1.9rem; font-weight:700; }
+    .table-borderless td { padding: 0.65rem 0.35rem; }
+    .card h4, .card h5 { font-weight:700; }
+    /* Ajustes visuales de los paneles grandes */
+    .card.shadow-sm { border: 1px solid rgba(0,0,0,0.06); }
+
+    /* Layout específico para wireframe */
+    .balance-main { padding: 12px; }
+    .panel { border-radius: 10px; border: 1px solid rgba(0,0,0,0.06); background: #fff; padding: 18px; }
+    .panel-title { font-size: 1.45rem; font-weight:700; margin-bottom: 8px; }
+    .panel-total { font-size: 0.95rem; color: #6b6b6b; }
+    .left-panel { min-height: 480px; }
+    .right-column { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+    .right-column .panel { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+    .right-column .panel .panel-body { overflow: auto; }
+    .panel table td { vertical-align: middle; }
+    .utilidad-row { background: rgba(0,0,0,0.03); }
+    @media (max-width: 991px) {
+      .left-panel { min-height: 320px; }
+      .right-column { gap: 12px; }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+{# ARCHIVED: original markup removed #}
+{% if hay_periodos_cerrados %}
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h1 class="h3 mb-1">Balance general</h1>
+      <p class="text-muted mb-0">Reporte resumen de la situación patrimonial por periodo</p>
+    </div>
+    <div>
+      <form method="get" class="d-flex gap-2 align-items-center">
+        <label class="me-2 mb-0">Periodo</label>
+        <select name="periodo" class="form-select form-select-sm" style="min-width:220px;" onchange="this.form.submit()">
+          <option value="">-- Seleccione un periodo --</option>
+          {% for p in periodos %}
+            <option value="{{ p.pk }}" {% if p.pk in selected_periods %}selected{% endif %}>{{ p.nombre }} ({{ p.fecha_inicio }} - {{ p.fecha_fin }})</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>
+        <button type="submit" name="export" value="csv" class="btn btn-sm btn-outline-secondary" id="exportCsv" {% if not mostrar_datos %}disabled{% endif %}>Exportar CSV</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="copyTable" {% if not mostrar_datos %}disabled{% endif %}>Copiar tabla</button>
+      </form>
+    </div>
+  </div>
+
+  {% if mostrar_datos %}
+  <div class="row balance-main">
+    <div class="col-md-6 mb-4 left-panel">
+      <div class="panel shadow-sm h-100">
+        <div>
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="panel-title">Activos</div>
+            <div class="panel-total">Total: <strong>{{ activos_total|abs_value|floatformat:2 }}</strong></div>
+          </div>
+          <div class="panel-body" style="min-height:380px;">
+            <table class="table table-borderless table-sm mb-0">
+              <thead class="visually-hidden">
+                <tr>
+                  <th>Código</th>
+                  <th>Cuenta</th>
+                  <th class="text-end">Saldo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in activos %}
+                  <tr>
+                    <td style="width:18%;">{{ a.codigo }}</td>
+                    <td>{{ a.nombre }}</td>
+                    <td class="text-end" style="width:25%;">{{ a.saldo|abs_value|floatformat:2 }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3"><em>No hay cuentas de activos para este periodo.</em></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+      <div class="right-column">
+        <div class="panel">
+          <div>
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div class="panel-title">Pasivos</div>
+              <div class="panel-total">Total: <strong>{{ pasivos_total|abs_value|floatformat:2 }}</strong></div>
+            </div>
+            <div class="panel-body" style="min-height:160px;">
+              <table class="table table-borderless table-sm mb-0">
+                <tbody>
+                  {% for p in pasivos %}
+                    <tr>
+                      <td style="width:18%;">{{ p.codigo }}</td>
+                      <td>{{ p.nombre }}</td>
+                      <td class="text-end" style="width:25%;">{{ p.saldo|abs_value|floatformat:2 }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="3"><em>No hay cuentas de pasivos para este periodo.</em></td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div>
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div class="panel-title">Patrimonio</div>
+              <div class="panel-total">Total: <strong>{{ patrimonio_total_with_utilidad|abs_value|floatformat:2 }}</strong></div>
+            </div>
+            <div class="panel-body" style="min-height:180px;">
+              <table class="table table-borderless table-sm mb-0">
+                <tbody>
+                  {% for pc in patrimonio %}
+                    <tr>
+                      <td style="width:18%;">{{ pc.codigo }}</td>
+                      <td>{{ pc.nombre }}</td>
+                      <td class="text-end" style="width:25%;">{{ pc.saldo|abs_value|floatformat:2 }}</td>
+                    </tr>
+                  {% empty %}
+                    <tr><td colspan="3"><em>No hay cuentas de patrimonio para este periodo.</em></td></tr>
+                  {% endfor %}
+                  {% if utilidad and utilidad != 0 %}
+                    <tr class="utilidad-row">
+                      <td></td>
+                      <td><em>Utilidad del ejercicio</em></td>
+                      <td class="text-end">{{ utilidad|abs_value|floatformat:2 }}</td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+            <div class="mt-3 d-flex justify-content-between">
+              <div>Pasivo + Patrimonio</div>
+              <div><strong>{{ pasivos_plus_patrimonio|default:0|abs_value|floatformat:2 }}</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% comment %} Verificar si el balance está cuadrado. Usamos el filtro `subtract` definido en `math_extras.py` {% endcomment %}
+  {% with activos_total|subtract:pasivos_total|subtract:patrimonio_total_with_utilidad as diferencia %}
+    <div class="mt-3">
+      <h5>Comprobación</h5>
+      {% comment %} Mostrar si el balance está cuadrado (Sí/No). Si no lo está, mostrar la diferencia numérica. {% endcomment %}
+      {% if diferencia == 0 %}
+        <p><strong>Balance cuadrado:</strong> Sí</p>
+        <div class="alert alert-success">El balance está cuadrado.</div>
+      {% else %}
+        <p><strong>Balance cuadrado:</strong> No — Diferencia: <strong>{{ diferencia|abs_value|floatformat:2 }}</strong></p>
+        <div class="alert alert-danger">El balance NO está cuadrado. Diferencia: <strong>{{ diferencia|abs_value|floatformat:2 }}</strong></div>
+      {% endif %}
+    </div>
+  {% endwith %}
+
+  <div class="mt-4">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary">Volver</a>
+  </div>
+  {% else %}
+    <div class="alert alert-warning">No se ha seleccionado un periodo. Por favor seleccione un periodo cerrado para ver el balance general.</div>
+  {% endif %}
+{% else %}
+  <div class="alert alert-danger">No se encontraron períodos contables cerrados. No es posible mostrar el balance general.</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+  {% if mostrar_datos %}
+  <script>
+    // Pequeño script opcional: resaltar fila si diferencia no es cero
+    document.addEventListener('DOMContentLoaded', function(){
+      const diffText = "{{ activos_total|subtract:pasivos_total|subtract:patrimonio_total_with_utilidad|floatformat:2 }}";
+      if (diffText !== "0.00"){
+        // se podría añadir lógica para destacar elementos o pedir ajuste
+        console.warn('Balance no cuadrado:', diffText);
+      }
+    });
+  </script>
+  <script>
+    // Copiar la tabla de balance al portapapeles como texto tabulado
+    document.addEventListener('DOMContentLoaded', function(){
+      const btnCopy = document.getElementById('copyTable');
+      if (!btnCopy) return;
+      btnCopy.addEventListener('click', async () => {
+        const container = document.querySelector('.balance-main');
+        if (!container) return alert('No se encontró el contenido para copiar.');
+        let lines = [];
+        // Recolectar paneles y sus tablas
+        const panels = container.querySelectorAll('.panel');
+        panels.forEach(panel => {
+          const title = panel.querySelector('.panel-title')?.textContent.trim() || '';
+          if (title) lines.push([title].join('\t'));
+          const tables = panel.querySelectorAll('table');
+          tables.forEach(table => {
+            for (const row of table.rows) {
+              const cells = Array.from(row.cells).map(td => td.textContent.trim());
+              lines.push(cells.join('\t'));
+            }
+            lines.push('');
+          });
+        });
+        const text = lines.join('\n');
+        try {
+          await navigator.clipboard.writeText(text);
+          const old = btnCopy.textContent;
+          btnCopy.textContent = 'Copiado ✓';
+          setTimeout(() => btnCopy.textContent = old, 1500);
+        } catch (e) {
+          console.error('Clipboard write failed', e);
+          alert('No se pudo copiar automáticamente. Usa Exportar CSV.');
+        }
+      });
+    });
+  </script>
+  {% endif %}
+{% endblock %}

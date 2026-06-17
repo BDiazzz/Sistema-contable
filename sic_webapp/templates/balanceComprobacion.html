@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% block title %}Balance de comprobación - No ajustado{% endblock %}
+
+{% block content %}
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        h2 {
+            margin-bottom: 5px;
+            color: #000000;
+            font-weight: bold;
+        }
+        .subtitulo {
+            font-size: large;
+            color: #afafaf;
+            margin-bottom: 20px;
+        }
+        .filtros {
+            margin-bottom: 20px;
+        }
+        .acciones {
+            float: right;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: -6px;
+        }
+        .alert-error {
+            background-color: #ffd6d6;
+            color: #8b0000;
+            border: 1px solid #ff9b9b;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+        label {
+            color: #000000;
+            margin-right: 10px;
+        }
+        select, button {
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #3d566e;
+            padding: 5px 10px;
+            margin-right: 10px;
+            border-radius: 4px;
+        }
+        table {
+            color: #000000;
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #6d6d6d;
+            padding: 8px;
+            text-align: right;
+        }
+        th {
+            background-color: #aaaaaa;
+            text-align: center;
+        }
+        td:first-child {
+            text-align: left;
+        }
+        tfoot td {
+            font-weight: bold;
+            background-color: #8b8b8b;
+        }
+    </style>
+
+    <h2>Hoja de trabajo – Balance de comprobación</h2>
+
+    {% if hay_periodos_abiertos %}
+        <div class="subtitulo">Periodo contable: {{ periodo.nombre }}</div>
+        <div class="acciones">
+            <button id="exportCsv" type="button">Exportar CSV</button>
+            <button id="copyTable" type="button">Copiar tabla</button>
+        </div>
+
+        <h3>Balance de comprobación (sin ajustes)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Cuenta</th>
+                    <th>Debe</th>
+                    <th>Haber</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in subcuentas %}
+                <tr>
+                    <td>{{ sub.cuenta_principal.codigo }} - {{ sub.nombre }}</td>
+                    <td>{{ sub.debe_final|default:0|floatformat:2 }}</td>
+                    <td>{{ sub.haber_final|default:0|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>Totales</td>
+                    <td>{{ total_debe|floatformat:2 }}</td>
+                    <td>{{ total_haber|floatformat:2 }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <script>
+            (function(){
+                const btnExport = document.getElementById('exportCsv');
+                const btnCopy = document.getElementById('copyTable');
+                // PK del periodo provista por el contexto (vacía si no hay periodo)
+                const periodoPk = "{% if periodo %}{{ periodo.pk }}{% else %}{% endif %}";
+
+                if (btnExport) {
+                    btnExport.addEventListener('click', () => {
+                        const base = window.location.pathname;
+                        const params = new URLSearchParams();
+                        if (periodoPk) params.set('periodo', periodoPk);
+                        params.set('export', 'csv');
+                        window.location.href = base + '?' + params.toString();
+                    });
+                }
+
+                if (btnCopy) {
+                    btnCopy.addEventListener('click', async () => {
+                        const table = document.querySelector('table');
+                        if (!table) return;
+                        let lines = [];
+                        for (const row of table.rows) {
+                            const cells = Array.from(row.cells).map(td => td.textContent.trim());
+                            lines.push(cells.join('\t'));
+                        }
+                        const text = lines.join('\n');
+                        try {
+                            await navigator.clipboard.writeText(text);
+                            const old = btnCopy.textContent;
+                            btnCopy.textContent = 'Copiado ✓';
+                            setTimeout(() => btnCopy.textContent = old, 1500);
+                        } catch (e) {
+                            console.error('Clipboard write failed', e);
+                            alert('No se pudo copiar automáticamente. Usa Exportar CSV.');
+                        }
+                    });
+                }
+            })();
+        </script>
+    {% else %}
+        <div class="alert-error">No existen períodos contables abiertos. Por favor crea o abre un período contable para poder generar el balance.</div>
+    {% endif %}
+{% endblock %}

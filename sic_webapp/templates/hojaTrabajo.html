@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1 class="text-center">Hoja de Trabajo</h1>
+    <div class="opciones row justify-content-center m-4 gap-4 flex-wrap">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="icono bi bi-journal-bookmark"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Balance de comprobacion</h5>
+                    <p class="card-text">Vista completa del catálogo de cuentas de la empresa, permitiendo consultar la estructura contable.</p>
+                    <a href="{% url 'balanceComprobacion' %}" class="btn btn-primary  mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="bi bi-pencil-square icono"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Ajustes</h5>
+                    <p class="card-text">Permite registrar los ajustes contables necesarios antes de generar los estados financieros.</p>
+                    <a href="{% url  'registrar_ajuste' %}" class="btn btn-primary mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>        
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="bi bi-journal-plus icono"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Balance de comprobacion ajustado</h5>
+                    <p class="card-text">Muestra el balance de cuentas luego de aplicar los ajustes, asegurando que el total de débitos y créditos.</p>
+                    <a href="{% url 'balance_ajustado' %}" class="btn btn-primary mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="bi bi-currency-dollar icono"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Estado de resultado</h5>
+                    <p class="card-text">Resume los ingresos y gastos para determinar la utilidad o pérdida del período.</p>
+                    <a href="{% url 'estado_resultado' %}" class="btn btn-primary mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="bi bi-people icono"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Estado de capital</h5>
+                    <p class="card-text">Muestra los cambios en el capital de los propietarios durante el período contable.</p>
+                    <a href="{% url 'estado_capital' %}" class="btn btn-primary mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="bi bi-bank icono"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Balance general</h5>
+                    <p class="card-text">Presenta la situación financiera de la empresa mostrando activos, pasivos y patrimonio en un momento determinado</p>
+                    <a href="{% url 'balance_general_cerrado' %}" class="btn btn-primary mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

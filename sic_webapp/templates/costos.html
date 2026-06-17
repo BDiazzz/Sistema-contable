@@ -1,0 +1,517 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Costos - Garrobos Tech{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Costos</h1>
+    
+{% block style %}
+   <style>
+    .table {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      background-color: #f9f9f9;
+    }
+    .table h2 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-size: 1.25rem;
+    }
+    .table .row {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .table .row > div {
+      flex: 1 1 200px;
+      display: flex;
+      flex-direction: column;
+    }
+    .table label {
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+    .table input, .table select {
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .table .hint {
+      font-size: 0.875rem;
+      color: #666;
+      margin-top: 0.25rem;
+    }
+    .table table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    .table th, .table td {
+      border: 1px solid #ddd;
+      padding: 0.5rem;
+      text-align: left;
+    }
+    .table th {
+      background-color: #f0f0f0;
+    }
+    .table .footer {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1rem;
+    }
+    .table .footer button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .table .footer button:hover {
+      background-color: #eee;
+    }
+    .table .sub {
+      font-size: 0.875rem;
+      color: #666;
+      margin-top: 0.5rem;
+    }
+    .error-msg {
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+      display: none;
+    }
+    .error-msg.visible { display: block; }
+  .var-positive { color: #198754; font-weight: 600; }
+  .var-negative { color: #dc3545; font-weight: 600; }
+    </style>
+{% endblock %}
+    <!-- Parámetros UCP -->
+    <div class="table">
+      <h2>Parámetros UCP</h2>
+      <div class="row">
+        <div>
+          <label for="uaw">UAW (peso de actores)</label>
+          <input id="uaw" type="number" step="1" min="1" data-min="1" value="8" />
+        </div>
+        <div>
+          <label for="uucw">UUCW (peso de casos de uso)</label>
+          <input id="uucw" type="number" step="1" min="1" data-min="1" value="40" />
+        </div>
+      </div>
+      <div class="row" style="margin-top:.5rem">
+        <div>
+          <label for="tcf">TCF (factor técnico, 0.6 + 0.01×Σ)</label>
+          <input id="tcf" type="number" step="0.01" min="0.01" max="1.6" data-min="0.01" value="1.43" />
+          <div class="hint">Usual: 0.8–1.0</div>
+        </div>
+        <div>
+          <label for="ecf">ECF (factor ambiental, 1.4 − 0.03×Σ)</label>
+          <input id="ecf" type="number" step="0.01" min="0.01" max="1.4" data-min="0.01" value="0.90" />
+          <div class="hint">Usual: 0.9–1.1</div>
+        </div>
+      </div>
+    </div>
+    <!-- Productividad y tarifas -->
+    <div class="table">
+      <h2>Productividad y tarifas</h2>
+      <div class="row">
+        <div>
+          <label for="hoursPerUcp">Horas por UCP</label>
+          <input id="hoursPerUcp" type="number" step="0.1" min="0.01" data-min="0.01" value="20" />
+          <div class="hint">Rango habitual: 20–30</div>
+        </div>
+        <div>
+          <label for="rate">Tarifa promedio ($/hora)</label>
+          <input id="rate" type="number" step="0.01" min="0.01" data-min="0.01" value="25" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Elementos del costo -->
+    <div class="table">
+      <h2>Elementos del costo</h2>
+      <div class="row">
+        <div>
+          <label for="materials">Materiales directos ($)</label>
+          <input id="materials" type="number" step="0.01" min="0.01" data-min="0.01" value="8000" />
+        </div>
+        <div>
+          <label for="ohPct">% CIF sobre mano de obra</label>
+          <input id="ohPct" type="number" step="0.01" min="0.01" data-min="0.01" value="21.93" />
+          <div class="hint">CIF = costos indirectos (administración, energía, depreciación)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unidades para precio -->
+    <div class="table">
+      <h2>Unidades para precio</h2>
+      <div class="row">
+        <div>
+          <label for="units">Unidades esperadas</label>
+          <input id="units" type="number" step="1" min="1" data-min="1" value="3045" />
+          <div class="hint">Usuarios/año (SaaS) o funcionalidades entregables</div>
+        </div>
+        <div>
+          <label for="currency">Moneda</label>
+          <select id="currency">
+            <option value="USD" selected>USD</option>
+            <option value="EUR">EUR</option>
+            <option value="CRC">CRC</option>
+            <option value="SVC">SVC</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultados -->
+    <div class="table" style="grid-column: 1 / -1;">
+      <h2>Resultados</h2>
+      <table class="table" id="results">
+        <thead>
+          <tr>
+            <th>Concepto</th>
+            <th>Fórmula</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>UUCP</td>
+            <td>UAW + UUCW</td>
+            <td id="uucpVal">—</td>
+          </tr>
+          <tr>
+            <td>UCP</td>
+            <td>UUCP × TCF × ECF</td>
+            <td id="ucpVal">—</td>
+          </tr>
+          <tr>
+            <td>Horas totales</td>
+            <td>UCP × horas/UCP</td>
+            <td id="hoursVal">—</td>
+          </tr>
+          <tr>
+            <td>Mano de obra</td>
+            <td>Horas × tarifa</td>
+            <td id="laborVal">—</td>
+          </tr>
+          <tr>
+            <td>CIF</td>
+            <td>Mano de obra × (%/100)</td>
+            <td id="ohVal">—</td>
+          </tr>
+          <tr>
+            <td>Costo total</td>
+            <td>Mano de obra + materiales + CIF</td>
+            <td id="totalVal">—</td>
+          </tr>
+          <tr>
+            <td>Precio unitario</td>
+            <td>Costo total / unidades</td>
+            <td id="unitVal">—</td>
+          </tr>
+          <tr>
+            <td>Variación total</td>
+            <td>Comparación con periodo anterior</td>
+            <td id="varTotalVal">—</td>
+          </tr>
+          <tr>
+            <td>Variación unitaria</td>
+            <td>Comparación con periodo anterior</td>
+            <td id="varUnitVal">—</td>
+          </tr>
+        </tbody>
+      </table>
+      <div id="prevData" style="display:none"
+           data-prev-total="{{ previous_total|default_if_none:"" }}"
+           data-prev-unit="{{ previous_unit|default_if_none:"" }}"></div>
+
+      <div class="footer">
+        <button id="resetBtn">Restablecer</button>
+        <button id="copyBtn">Copiar resultados</button>
+      </div>
+      <p class="sub">Tip: varía horas/UCP, tarifa y %CIF para simular escenarios de productividad y estructura de costos.</p>
+    </div>
+  </div>
+
+  <script>
+    const els = {
+      uaw: document.getElementById('uaw'),
+      uucw: document.getElementById('uucw'),
+      tcf: document.getElementById('tcf'),
+      ecf: document.getElementById('ecf'),
+      hoursPerUcp: document.getElementById('hoursPerUcp'),
+      rate: document.getElementById('rate'),
+      materials: document.getElementById('materials'),
+      ohPct: document.getElementById('ohPct'),
+      units: document.getElementById('units'),
+      currency: document.getElementById('currency'),
+      uucpVal: document.getElementById('uucpVal'),
+      ucpVal: document.getElementById('ucpVal'),
+      hoursVal: document.getElementById('hoursVal'),
+      laborVal: document.getElementById('laborVal'),
+      ohVal: document.getElementById('ohVal'),
+      totalVal: document.getElementById('totalVal'),
+      unitVal: document.getElementById('unitVal'),
+      resetBtn: document.getElementById('resetBtn'),
+      copyBtn: document.getElementById('copyBtn'),
+      varTotalVal: document.getElementById('varTotalVal'),
+      varUnitVal: document.getElementById('varUnitVal'),
+  prevData: document.getElementById('prevData'),
+    };
+
+    const fmt = (n, c) => {
+      if (Number.isNaN(n) || !Number.isFinite(n)) return '—';
+      const opts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+      return new Intl.NumberFormat('es-SV', opts).format(n) + (c ? ` ${c}` : '');
+    };
+
+    // Tasas por defecto (1 USD = X moneda)
+    const defaultRates = {
+      'USD': 1.00,
+      'EUR': 0.92,
+      'CRC': 560.00,
+      'SVC': 8.75
+    };
+
+    // Rates actuales (mutable)
+    let rates = Object.assign({}, defaultRates);
+    
+
+    const convert = (amount, fromCode, toCode) => {
+      if (fromCode === toCode) return amount;
+      const rFrom = rates[fromCode] || defaultRates[fromCode] || 1;
+      const rTo = rates[toCode] || defaultRates[toCode] || 1;
+      return amount * (rTo / rFrom);
+    };
+
+    
+
+    const getMin = (el) => {
+      if (!el) return 0.01;
+      const m = parseFloat(el.dataset && el.dataset.min);
+      return Number.isFinite(m) ? m : 0.01;
+    };
+
+    const sanitizedNumber = (el) => {
+      const min = getMin(el);
+      let v = parseFloat(el.value);
+      if (!Number.isFinite(v) || v <= 0) return min;
+      return v;
+    };
+
+    const calc = () => {
+  // Lectura de inputs (se asume que los inputs están en USD — moneda base)
+  const uaw = sanitizedNumber(els.uaw);
+  const uucw = sanitizedNumber(els.uucw);
+  const tcf = sanitizedNumber(els.tcf);
+  const ecf = sanitizedNumber(els.ecf);
+  const hoursPerUcp = sanitizedNumber(els.hoursPerUcp);
+  const rateUSD = sanitizedNumber(els.rate); // tarifa expresada en USD/h
+  const materialsUSD = sanitizedNumber(els.materials); // materiales en USD
+  const ohPct = sanitizedNumber(els.ohPct) / 100;
+  const units = Math.max(1, parseInt(els.units.value, 10) || getMin(els.units));
+  const displayCurrency = els.currency.value; // moneda seleccionada para mostrar
+
+  // Cálculos internos en USD (moneda base)
+  const uucp = uaw + uucw;
+  const ucp = uucp * tcf * ecf;
+  const hours = ucp * hoursPerUcp;
+  const laborUSD = hours * rateUSD;
+  const ohUSD = laborUSD * ohPct;
+  const totalUSD = laborUSD + materialsUSD + ohUSD;
+  const unitUSD = totalUSD / units;
+
+  // Mostrar valores no monetarios en su formato (horas)
+  els.uucpVal.textContent = fmt(uucp);
+  els.ucpVal.textContent = fmt(ucp);
+  els.hoursVal.textContent = fmt(hours, 'h');
+
+  // Convertir desde USD a la moneda seleccionada para mostrar en la tabla de resultados
+  const laborDisplay = convert(laborUSD, 'USD', displayCurrency);
+  const ohDisplay = convert(ohUSD, 'USD', displayCurrency);
+  const totalDisplay = convert(totalUSD, 'USD', displayCurrency);
+  const unitDisplay = convert(unitUSD, 'USD', displayCurrency);
+
+  els.laborVal.textContent = fmt(laborDisplay, displayCurrency);
+  els.ohVal.textContent = fmt(ohDisplay, displayCurrency);
+  els.totalVal.textContent = fmt(totalDisplay, displayCurrency);
+  els.unitVal.textContent = fmt(unitDisplay, displayCurrency);
+
+  // Variación contable: comparar con periodo anterior (si se pasó) o con baseline
+  // Leer valores previos desde dataset (si existen). Se espera que prev* estén en USD.
+  const prevTotalRaw = els.prevData ? els.prevData.dataset.prevTotal : '';
+  const prevUnitRaw = els.prevData ? els.prevData.dataset.prevUnit : '';
+  const prevTotalUSD = prevTotalRaw ? parseFloat(prevTotalRaw) : null;
+  const prevUnitUSD = prevUnitRaw ? parseFloat(prevUnitRaw) : null;
+
+      // Baseline cache (se mantiene entre recalculos hasta que se resetee)
+      if (typeof window._costs_baseline === 'undefined') {
+        window._costs_baseline = { total: null, unit: null };
+      }
+
+  let refTotal = (prevTotalUSD !== null && Number.isFinite(prevTotalUSD)) ? prevTotalUSD : window._costs_baseline.total;
+  let refUnit = (prevUnitUSD !== null && Number.isFinite(prevUnitUSD)) ? prevUnitUSD : window._costs_baseline.unit;
+
+      // Si no hay referencia aún, usar el valor actual como baseline (variación 0)
+      if (refTotal === null || !Number.isFinite(refTotal)) {
+        window._costs_baseline.total = totalUSD;
+        refTotal = totalUSD;
+      }
+      if (refUnit === null || !Number.isFinite(refUnit)) {
+        window._costs_baseline.unit = unitUSD;
+        refUnit = unitUSD;
+      }
+
+  // var* están en USD; convertir a moneda de visualización antes de mostrar
+  const varTotalAbsUSD = totalUSD - refTotal;
+  const varTotalPct = refTotal !== 0 ? (varTotalAbsUSD / refTotal) * 100 : 0;
+  const varUnitAbsUSD = unitUSD - refUnit;
+  const varUnitPct = refUnit !== 0 ? (varUnitAbsUSD / refUnit) * 100 : 0;
+
+  const varTotalAbs = convert(varTotalAbsUSD, 'USD', displayCurrency);
+  const varUnitAbs = convert(varUnitAbsUSD, 'USD', displayCurrency);
+
+      const sign = (n) => (n > 0 ? '+' : (n < 0 ? '−' : ''));
+
+  const varTotalText = `${sign(varTotalAbs)}${fmt(Math.abs(varTotalAbs), displayCurrency)} (${Math.abs(varTotalPct).toFixed(2)}%)`;
+  const varUnitText = `${sign(varUnitAbs)}${fmt(Math.abs(varUnitAbs), displayCurrency)} (${Math.abs(varUnitPct).toFixed(2)}%)`;
+
+      if (els.varTotalVal) {
+        els.varTotalVal.textContent = varTotalText;
+        els.varTotalVal.classList.remove('var-positive','var-negative');
+        if (varTotalAbs > 0) els.varTotalVal.classList.add('var-positive');
+        if (varTotalAbs < 0) els.varTotalVal.classList.add('var-negative');
+      }
+      if (els.varUnitVal) {
+        els.varUnitVal.textContent = varUnitText;
+        els.varUnitVal.classList.remove('var-positive','var-negative');
+        if (varUnitAbs > 0) els.varUnitVal.classList.add('var-positive');
+        if (varUnitAbs < 0) els.varUnitVal.classList.add('var-negative');
+      }
+      // (conversion table removed) — ya no se actualiza tabla de conversiones
+    };
+
+    const markInvalid = (el, state) => {
+      if (!el) return;
+      if (state) el.classList.add('is-invalid'); else el.classList.remove('is-invalid');
+    };
+    const setError = (el, msg) => {
+      if (!el) return;
+      let container = el.parentNode;
+      let err = container.querySelector('.error-msg');
+      if (!err) {
+        err = document.createElement('div');
+        err.className = 'error-msg';
+        container.appendChild(err);
+      }
+      err.textContent = msg;
+      err.classList.add('visible');
+    };
+
+    const clearError = (el) => {
+      if (!el) return;
+      const err = el.parentNode.querySelector('.error-msg');
+      if (err) {
+        err.classList.remove('visible');
+        err.textContent = '';
+      }
+    };
+
+    const bind = () => {
+      const numericIds = ['uaw','uucw','tcf','ecf','hoursPerUcp','rate','materials','ohPct','units'];
+
+      numericIds.forEach(id => {
+        const el = els[id];
+        if (!el) return;
+        el.addEventListener('input', () => {
+          const raw = el.value;
+          if (raw === '' || raw.trim() === '') {
+            setError(el, 'No puede estar vacío');
+            markInvalid(el, true);
+            calc();
+            return;
+          }
+          const v = parseFloat(raw);
+          if (!Number.isFinite(v) || v <= 0) {
+            setError(el, 'Debe ser mayor que 0');
+            markInvalid(el, true);
+          } else {
+            clearError(el);
+            markInvalid(el, false);
+          }
+          calc();
+        });
+        el.addEventListener('blur', () => {
+          const min = getMin(el);
+          const raw = el.value;
+          if (raw === '' || raw.trim() === '') {
+            el.value = min;
+            clearError(el);
+            markInvalid(el, false);
+            calc();
+            return;
+          }
+          let v = parseFloat(raw);
+          if (!Number.isFinite(v) || v <= 0) {
+            // corregir automáticamente al mínimo permitido
+            el.value = min;
+            clearError(el);
+            markInvalid(el, false);
+            calc();
+          }
+        });
+      });
+
+      // currency change
+      els.currency.addEventListener('input', calc);
+
+      els.resetBtn.addEventListener('click', () => {
+        els.uaw.value = 20; els.uucw.value = 80;
+        els.tcf.value = 0.9; els.ecf.value = 1.0;
+        els.hoursPerUcp.value = 25; els.rate.value = 25;
+        els.materials.value = 5000; els.ohPct.value = 25;
+        els.units.value = 1000; els.currency.value = 'USD';
+        // limpiar marcas de validación y mensajes
+        ['uaw','uucw','tcf','ecf','hoursPerUcp','rate','materials','ohPct','units'].forEach(id => {
+          if (els[id]) {
+            els[id].classList.remove('is-invalid');
+            clearError(els[id]);
+          }
+        });
+        // Reset baseline so variation re-calculates from new defaults
+        if (window._costs_baseline) {
+          window._costs_baseline.total = null;
+          window._costs_baseline.unit = null;
+        }
+        calc();
+      });
+
+      els.copyBtn.addEventListener('click', () => {
+        const lines = [
+          `UUCP: ${els.uucpVal.textContent}`,
+          `UCP: ${els.ucpVal.textContent}`,
+          `Horas totales: ${els.hoursVal.textContent}`,
+          `Mano de obra: ${els.laborVal.textContent}`,
+          `CIF: ${els.ohVal.textContent}`,
+          `Costo total: ${els.totalVal.textContent}`,
+          `Precio unitario: ${els.unitVal.textContent}`,
+        ].join('\n');
+        navigator.clipboard.writeText(lines).then(() => {
+          els.copyBtn.textContent = 'Copiado ✓';
+          setTimeout(() => (els.copyBtn.textContent = 'Copiar resultados'), 1500);
+        });
+      });
+
+    // (editor de tasas y controles de conversiones eliminados)
+    };
+
+    bind();
+    calc();
+  </script>
+{% endblock %}

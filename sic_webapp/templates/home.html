@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+        
+{% block back-button %}
+{% endblock %}
+
+{% block content %}
+    <h1 class="text-center">Sistema de Contabilidad de Garrobos Tech</h1>
+    <div class="opciones row justify-content-center m-4 gap-4 flex-wrap">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="icono bi bi-journal-bookmark"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Catalogo de cuentas</h5>
+                    <p class="card-text">Vista completa del catálogo de cuentas de la empresa, permitiendo consultar la estructura contable.</p>
+                    <a href="{% url 'catalogo' %}" class="btn btn-primary  mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="bi bi-book icono"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Libro Mayor</h5>
+                    <p class="card-text">Registro detallado de todas las transacciones agrupadas por cuenta, mostrando débitos y créditos para facilitar el análisis contable.</p>
+                    <a href="{% url 'libro_mayor' %}" class="btn btn-primary mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="bi-pencil-square icono"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Hoja de Trabajo</h5>
+                    <p class="card-text">Herramienta central para preparar estados financieros: incluye balance de comprobación, ajustes, balance ajustado, estado de resultados...</p>
+                    <a href="{% url 'hoja_trabajo' %}" class="btn btn-primary mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="bi bi-currency-dollar icono"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Contabilidad de costos</h5>
+                    <p class="card-text">Permite analizar los costos de desarrollo de un software para un control eficiente.</p>
+                    <a href="{% url 'costos' %}" class="btn btn-primary mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 d-flex flex-column">
+                <i class="bi bi-plus-square icono"></i>
+                <div class="card-body d-flex flex-column text-center">
+                    <h5 class="card-title">Registrar Transaccion</h5>
+                    <p class="card-text">Opción para ingresar nuevas transacciones financieras actualizando automáticamente los registros contables.</p>
+                    <a href="{% url  'registrar_diario' %}" class="btn btn-primary mt-auto">Ingresar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

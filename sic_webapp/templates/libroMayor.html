@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load math_extras %}
+
+{% block title %}Libro Mayor - Garrobos Tech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/libroMayor.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="libro-header">
+    <h2>Libro Mayor</h2>
+    <p class="text-muted">Garrobos Tech</p>
+</div>
+
+{% if messages %}
+    <div class="container" style="max-width: 1200px; margin: 0 auto 1rem auto; padding: 0 1rem;">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="periodo-management-section">
+    <div class="periodo-grid">
+        <div class="periodo-card">
+            <div class="card-header">
+                <h4>Seleccionar Periodo</h4>
+            </div>
+            <div class="card-body">
+                {% if todos_periodos %}
+                    <form method="GET" action="{% url 'libro_mayor' %}" id="formSelectorPeriodo">
+                        <div class="select-wrapper">
+                            <select name="periodo" class="periodo-select" onchange="document.getElementById('formSelectorPeriodo').submit()">
+                                {% for periodo in todos_periodos %}
+                                    <option value="{{ periodo.pk }}" 
+                                            {% if periodo_seleccionado and periodo.pk == periodo_seleccionado.pk %}selected{% endif %}>
+                                        {{ periodo.nombre }} 
+                                        {% if periodo.estado == 'ABIERTO' %}
+                                            (Abierto)
+                                        {% else %}
+                                            (Cerrado)
+                                        {% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
+                    
+                    {% if periodo_seleccionado %}
+                        <div class="periodo-info-selected">
+                            <div class="info-row">
+                                <span class="info-label">Periodo:</span>
+                                <span class="info-value">{{ periodo_seleccionado.nombre }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Desde:</span>
+                                <span class="info-value">{{ periodo_seleccionado.fecha_inicio|date:"d/m/Y" }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Hasta:</span>
+                                <span class="info-value">{{ periodo_seleccionado.fecha_fin|date:"d/m/Y" }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Estado:</span>
+                                {% if periodo_seleccionado.estado == 'ABIERTO' %}
+                                    <span class="status-badge status-abierto">Abierto</span>
+                                {% else %}
+                                    <span class="status-badge status-cerrado">Cerrado</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <p class="no-periodos-msg">No hay periodos contables registrados.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="periodo-card">
+            <div class="card-header">
+                <h4>Gestión de Periodos</h4>
+            </div>
+            <div class="card-body">
+                {% if periodo_activo %}
+                    <div class="periodo-activo-info">
+                        <div class="activo-label">Periodo Activo</div>
+                        <p class="periodo-activo-nombre">{{ periodo_activo.nombre }}</p>
+                        <p class="periodo-activo-fechas">{{ periodo_activo.fecha_inicio|date:"d/m/Y" }} - {{ periodo_activo.fecha_fin|date:"d/m/Y" }}</p>
+                    </div>
+                {% else %}
+                    <div class="alert-warning-box">
+                        <strong>No hay periodo abierto</strong>
+                        <p>Debe crear un nuevo periodo contable para registrar transacciones.</p>
+                    </div>
+                {% endif %}
+
+                <div class="action-buttons-group">
+                    {% if hay_periodo_abierto %}
+                        <form method="POST" action="{% url 'cerrar_periodo' %}" style="display: inline-block;" onsubmit="return confirm('¿Está seguro de cerrar el período contable actual? Esta acción no se puede revertir.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-action btn-cerrar-periodo">
+                                Cerrar Periodo
+                            </button>
+                        </form>
+                        <button class="btn-action btn-disabled" disabled>
+                            Crear Periodo
+                        </button>
+                        <p class="button-hint">Cierre el periodo actual para crear uno nuevo</p>
+                    {% else %}
+                        <button class="btn-action btn-crear-periodo" onclick="toggleFormPeriodo()">
+                            Crear Periodo
+                        </button>
+                    {% endif %}
+                </div>
+                
+                {% if not hay_periodo_abierto %}
+                    <div id="formNuevoPeriodo" class="form-nuevo-periodo" style="display: none;">
+                        <div class="alert alert-info" style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 4px; background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; font-size: 0.85rem;">
+                            <strong>Importante:</strong> El periodo debe incluir la fecha actual (hoy) para poder registrar transacciones.
+                            {% if fecha_minima_permitida %}
+                                <br>La fecha de inicio debe ser posterior al último período cerrado (desde {{ fecha_minima_permitida|date:"d/m/Y" }}).
+                            {% else %}
+                                <br>Como es el primer período contable, la fecha de inicio no puede ser anterior a la fecha actual.
+                            {% endif %}
+                        </div>
+                        <form method="POST" action="{% url 'crear_periodo' %}">
+                            {% csrf_token %}
+                            <div class="form-group-modern">
+                                <label for="nombre">Nombre del Periodo</label>
+                                <input type="text" id="nombre" name="nombre" class="input-modern" 
+                                       placeholder="Ej: Enero 2025" required>
+                            </div>
+                            <div class="form-group-modern">
+                                <label for="fecha_inicio">Fecha de Inicio</label>
+                                <input type="date" id="fecha_inicio" name="fecha_inicio" class="input-modern" 
+                                       {% if fecha_minima_permitida %}min="{{ fecha_minima_permitida|date:'Y-m-d' }}"{% else %}min="{% now 'Y-m-d' %}"{% endif %}
+                                       value="{% now 'Y-m-d' %}" required>
+                                <small class="input-help">
+                                    {% if fecha_minima_permitida %}
+                                        Debe ser desde {{ fecha_minima_permitida|date:"d/m/Y" }} en adelante
+                                    {% else %}
+                                        Debe ser desde hoy ({% now "d/m/Y" %}) en adelante
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="form-group-modern">
+                                <label for="fecha_fin">Fecha de Fin</label>
+                                <input type="date" id="fecha_fin" name="fecha_fin" class="input-modern" required>
+                                <small class="input-help">Debe incluir la fecha actual para poder registrar transacciones</small>
+                            </div>
+                            <div class="form-actions-modern">
+                                <button type="submit" class="btn-form btn-form-primary">Crear Periodo</button>
+                                <button type="button" class="btn-form btn-form-secondary" onclick="toggleFormPeriodo()">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="libro-container">
+    {% for key, categoria in categorias.items %}
+        {% if categoria.cuentas %}
+        <div class="categoria-section">
+            <h3 class="categoria-header">{{ categoria.nombre }}</h3>
+
+            {% for cuenta in categoria.cuentas %}
+            <div class="cuenta-section">
+                <div class="cuenta-titulo">
+                    <strong>{{ cuenta.codigo|format_codigo }}</strong> - {{ cuenta.nombre }}
+                </div>
+
+                <table class="movimientos-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Descripción</th>
+                            <th>Debe</th>
+                            <th>Haber</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mov in cuenta.movimientos %}
+                        <tr>
+                            <td>{{ mov.fecha|date:"d/m/Y" }}</td>
+                            <td>{{ mov.descripcion }}</td>
+                            <td class="monto">
+                                {% if mov.tipo == 'Debe' %}
+                                    {{ mov.monto|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="monto">
+                                {% if mov.tipo == 'Haber' %}
+                                    {{ mov.monto|floatformat:2 }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        <tr class="total-cuenta-row">
+                            <td colspan="2"><strong>Total {{ cuenta.codigo|format_codigo }}</strong></td>
+                            <td class="monto"><strong>{{ cuenta.debe_total|floatformat:2 }}</strong></td>
+                            <td class="monto"><strong>{{ cuenta.haber_total|floatformat:2 }}</strong></td>
+                        </tr>
+                        <tr class="saldo-row">
+                            <td colspan="2"><strong>Saldo de {{ cuenta.codigo|format_codigo }}</strong></td>
+                            {% if key == 'A' or key == 'G' %}
+                                <td class="monto"><strong>${{ cuenta.saldo|floatformat:2 }}</strong></td>
+                                <td class="monto"><strong>-</strong></td>
+                            {% else %}
+                                <td class="monto"><strong>-</strong></td>
+                                <td class="monto"><strong>${{ cuenta.saldo|floatformat:2 }}</strong></td>
+                            {% endif %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endfor %}
+
+    {% if not categorias.A.cuentas and not categorias.P.cuentas and not categorias.C.cuentas and not categorias.I.cuentas and not categorias.G.cuentas %}
+        <div class="text-center text-muted p-5">
+            <p>No hay movimientos registrados en el libro mayor</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleFormPeriodo() {
+    var form = document.getElementById('formNuevoPeriodo');
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+    } else {
+        form.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
